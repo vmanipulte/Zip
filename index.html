@@ -1,0 +1,93 @@
+<!doctype html>
+<!--
+ @license
+ Copyright 2019 Google LLC. All Rights Reserved.
+ SPDX-License-Identifier: Apache-2.0
+-->
+<!-- [START maps_map_simple] -->
+<html>
+  <head>
+    <title>Simple Map</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" type="text/css" href="./style.css" />
+
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <!-- prettier-ignore -->
+    <script>(g=>{var h,a,k,p="The Google Maps JavaScript API",
+    c="google",l="importLibrary",q="__ib__",
+    m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,
+    e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})
+        ({key: "AIzaSyA8MGkTMQv70YOulLF9wcrD_t6g_bF4f_Y", v: "weekly"});
+        let map;
+
+async function initMap() {
+  const { Map } = await google.maps.importLibrary("maps");
+  const { Geo } = await google.maps.importLibrary("geometry");
+var community;
+  
+  map = new Map(document.getElementById("map"), {
+    center: { lat: 32.1574, lng: -82.9071 },
+    zoom: 4,
+  });
+
+  $.getJSON('Communities.json', function(data) {
+console.log(data)
+community = data
+    $.each(data, function(i, f) {
+      var latlng = new google.maps.LatLng(f.Latitude, f.Longitude);
+        var marker = new google.maps.Marker({
+        position: latlng,
+        title: 'new marker',
+        draggable: true,
+        map: map
+    });
+  });
+
+});
+var geocoder = new google.maps.Geocoder();
+var address = "30041"
+geocoder.geocode({ 'address': address }, function(results, status) {
+    if (status == google.maps.GeocoderStatus.OK) {
+       console.log(results)
+       var lat = results[0].geometry.location.lat();
+          var lng = results[0].geometry.location.lng();
+          const center = new google.maps.LatLng(lat, lng);
+          console.log('center ' + center)
+          var circle = new google.maps.Circle({
+                        map: map,
+                        center: center,
+                        radius: 89928.2152533624,
+                        strokeColor: "#ff001e",
+                        fillcolor: "#ff001e",
+                        editable: true
+                      });
+          var result = community.filter(m => {
+            const markerLoc = new google.maps.LatLng(m.Latitude, m.Longitude);
+            const distanceInKm = google.maps.geometry.spherical.computeDistanceBetween(markerLoc, center)*0.000621371;
+            if (distanceInKm < parseInt(800)) {
+              console.log(distanceInKm)
+              return m;
+            }
+            return
+          });
+          console.log(result.length)
+          const bounds = new google.maps.LatLngBounds();
+      result.forEach(m => {
+        bounds.extend(new google.maps.LatLng(m.Latitude, m.Longitude));
+      });
+      console.log(bounds)
+      //map.fitBounds(bounds);
+    }
+});
+}
+
+initMap();  
+
+        </script>
+  </body>
+</html>
+<!-- [END maps_map_simple] -->

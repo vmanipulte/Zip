@@ -76,7 +76,7 @@
           if(filteredMarkers.length > 0)
           {
             filteredMarkers.forEach(m => {
-              console.log('region '+m.Region[0]+ ' city '+m.Address.City)
+              
             bounds.extend(new google.maps.LatLng(m.Latitude, m.Longitude));
           });
           map.fitBounds(bounds);
@@ -119,17 +119,17 @@
     }
 
     function reset(){
-      $.getJSON('Communities.json', function (data) {
+      $.getJSON('Regions.json', function (data) {
         community = data
         $.each(data, function (i, f) {
           var latlng = new google.maps.LatLng(f.Latitude, f.Longitude);
-          
+          console.log(data.length)
           var marker = new google.maps.Marker({
             position: latlng,
             title: f.Name,
             draggable: true,
             map: map,
-            icon:GetImageURL(f.BrandName)
+            //icon:GetImageURL(f.BrandName)
           });
         });
 

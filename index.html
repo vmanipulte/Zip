@@ -55,7 +55,8 @@
           console.log(cities)
           $("#response").append(cities);
           const center = new google.maps.LatLng(lat, lng);
-         circle.setPosition(center)
+          circle.setCenter(center)
+         circle.setRadius(50*1609.34)
           var result = community.filter(m => {
             const markerLoc = new google.maps.LatLng(m.Latitude, m.Longitude);
             const distance = google.maps.geometry.spherical.computeDistanceBetween(markerLoc, center) * 0.000621371;
@@ -98,21 +99,15 @@
         center: { lat: 32.1574, lng: -82.9071 },
         zoom: 4,
       });
-      circle = new google.maps.Marker({
-    map: map,
-    title: "circle",
-    icon: {
-      strokeColor: '#FF0000',
-      strokeOpacity: 0.5,
+      circle = new google.maps.Circle({
+      strokeColor: "#FF0000",
+      strokeOpacity: 0.8,
       strokeWeight: 2,
-      fillColor: '#FF0000',
-      fillOpacity: 0.5,
-      path: google.maps.SymbolPath.CIRCLE,
-      scale: 20,
-      anchor: new google.maps.Point(0, 0)
-    }
-
-  });
+      fillColor: "#FF0000",
+      fillOpacity: 0.35,
+      map,
+      radius:16093.4,
+    });
       reset();
 
 

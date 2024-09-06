@@ -1,0 +1,293 @@
+<!doctype html>
+
+<!-- This HTML code represents a simple web application for searching communities by ZIP code and radius 
+using the Google Maps JavaScript API. It includes a form for inputting a ZIP code and a radius, 
+which are then used to find and display communities within the specified radius on a map.  -->
+
+<html>
+
+<head>
+  <title>Simple Map</title>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="./style.css" />
+
+</head>
+
+<body>
+   <!-- Input fields for ZIP code and radius -->
+  <label for="fname">Zip:</label>
+  <input type="text" id="zip"> &nbsp;&nbsp;
+  <label for="lname">Radius:</label>
+  <input type="text" id="radius">&nbsp;&nbsp;
+
+    <!-- Submit button to trigger the search function -->
+  <input type="submit" value="Submit" onclick="search()"> <br><br>
+  <div for="lname" id="response"></div> <br><br>
+  <div id="map"></div> <br><br>
+
+  <table>
+    <thead>
+      <tr>
+        <th></th>
+        <th>Brand</th>
+        <th>Community</th>
+        <th>Region</th>
+        <th>Distance (miles)</th>
+      </tr>
+    </thead>
+    <tbody id="bodyCal">
+    </tbody>
+
+  </table>
+
+  <script>(g => {
+      var h, a, k, p = "The Google Maps JavaScript API",
+        c = "google", l = "importLibrary", q = "__ib__",
+        m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set,
+          e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n))
+    })
+      ({ key: "AIzaSyA8MGkTMQv70YOulLF9wcrD_t6g_bF4f_Y", v: "weekly" });
+
+    // Initialization of global variables used for the map, markers, and search functions
+    let map;
+    let community;
+    let circle;
+    let styles;
+    let markers = [];
+    let communityMarkers = [];
+
+    initMap();
+
+  // Function to initialize the Google map, set its center, zoom level, and default marker
+    async function initMap() {
+
+      const { Map } = await google.maps.importLibrary("maps");
+      const { Geo } = await google.maps.importLibrary("geometry");
+      map = new Map(document.getElementById("map"), {
+        center: { lat: 32.1574, lng: -82.9071 },
+        zoom: 4,
+      });
+      $.getJSON('map-styles.json', function (data) {
+        styles = data
+        map.setOptions({ styles: styles });
+      });
+      circle = new google.maps.Circle({
+      strokeColor: "#FF0000",
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: "#FF0000",
+      fillOpacity: 0.35,
+      Editable:true,
+      map
+      //radius:16093.4,
+    });
+      DrawRegionPins();
+    }
+
+    function DrawRegionPins() {
+      $.getJSON('Regions.json', function (data) {
+        community = data
+        $.each(data, function (i, f) {
+          var latlng = new google.maps.LatLng(f.Latitude, f.Longitude);
+          var marker = new google.maps.Marker({
+            position: latlng,
+            title: f.Name,
+            draggable: true,
+            map: map,
+            id: f.Name,
+            icon: GetImageURL()
+          });
+          markers.push(marker);
+        });
+      });
+    }
+
+       // Function to return the correct brand marker image based on the brand name
+       function GetImageURL(brand) {
+      let url;
+      switch (brand) {
+        case 'Pulte': {
+          url = 'map-pin/map-pin-pulte.svg';
+          break;
+        }
+        case 'Centex': {
+          url = 'map-pin/map-pin-centex.svg';
+          break;
+        }
+        case 'DiVosta': {
+          url = 'map-pin/map-pin-divosta.svg';
+          break;
+        }
+        case 'AmericanWest': {
+          url = 'map-pin/map-pin-americanwest.svg';
+          break;
+        }
+        case 'JW': {
+          url = 'map-pin/map-pin-jw.svg';
+          break;
+        }
+        case 'Del Webb': {
+          url = 'map-pin/map-pin-delwebb.svg';
+          break;
+        }
+        default: {
+          url = 'map-pin/map-pin-default.svg';
+          break;
+        }
+      }
+
+      return url;
+    }
+    
+    
+    // Function to handle search functionality when the "Submit" button is clicked
+    
+    function search() {
+      var geocoder = new google.maps.Geocoder();
+      var address = $("#zip").val()
+
+      //Default Radius in 50
+      var radiusval = $("#radius").val() ? $("#radius").val() : 50
+
+       // Use Google Maps API service to convert the ZIP code into geographical coordinates (latitude and longitude).
+      geocoder.geocode({ 'address': address }, function (results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+          var radius = [];
+          var lat = results[0].geometry.location.lat();
+          var lng = results[0].geometry.location.lng();
+          $("#response").empty();
+          $("#response").append(results[0].formatted_address);
+          const center = new google.maps.LatLng(lat, lng);
+
+
+          //Sets the center and radius of the circle based on the geocoded location and the input radius.
+          circle.setCenter(center)
+          circle.setRadius(radiusval*1609.34)
+
+          //Filters the regions to identify those within the specified radius, and makes an API call to fetch community map markers
+
+          var result = community.filter(m => {
+            const markerLoc = new google.maps.LatLng(m.Latitude, m.Longitude);
+            const distance = google.maps.geometry.spherical.computeDistanceBetween(markerLoc, center) * 0.000621371;
+
+
+            radius.push({ Id: m.Name, distance: distance })
+            return m;
+
+          });
+          var topValues = [...radius].sort((a, b) => a.distance - b.distance).slice(0, 5);
+          
+          //select the closest region pin from the entered zipcode
+
+          var selectedregion = result.filter(a => a.Name == topValues[0].Id)
+          var statename;
+          var regionmarkers = markers.filter(a => a.id != selectedregion[0].Name)
+          for (let i = 0; i < markers.length; i++)
+            markers[i].setMap(null);
+    
+          for (let i = 0; i < communityMarkers.length; i++)
+            communityMarkers[i].setMap(null);
+
+      // Set all the region pins except the closest region pin from the entered zipcode
+          for (let i = 0; i < regionmarkers.length; i++)
+          regionmarkers[i].setMap(map);
+
+
+           // Fetch state name to be used in map markers API call, we need to findout how to handle this 
+            //in our websites - probably create new API to return community mapmarkers for the selected region only
+          $.getJSON('States.json', function (data) {
+            $.each(data[0].States, function (i, f) {
+              $.each(f.Regions, function (j, k) {
+                if (k.RegionName == selectedregion[0].Name) {
+                  statename = f.StateName;
+                  return false
+                }
+
+
+              });
+            });
+          
+             // API call to get community markers for the closest region
+          }).then(function () {
+            var settings = {
+              "url": "https://www.pulte.com/api/marker/mapmarkers?brand=Pulte&state=" + statename + "&region=" + selectedregion[0].Name + "&qmi=false",
+              "method": "GET",
+              "timeout": 0,
+            };
+            $.ajax(settings).done(function (response) {
+
+
+              var communityradius = []
+              var result = response.filter(m => {
+                const markerLoc = new google.maps.LatLng(m.Latitude, m.Longitude);
+                const distance = google.maps.geometry.spherical.computeDistanceBetween(markerLoc, center) * 0.000621371;
+
+                if (distance < radiusval) {
+                  communityradius.push({ Id: m.Id, distance: distance })
+                  return m;
+                }
+                return
+              });
+              var topValues = [...communityradius].sort((a, b) => a.distance - b.distance);
+              if (topValues.length == 0) {
+                alert('No Communities Found')
+                return false
+              }
+
+              //Set all the community marker pins on the map
+              $.each(response, function (i, f) {
+                var latlng = new google.maps.LatLng(f.Latitude, f.Longitude);
+                var marker = new google.maps.Marker({
+                  position: latlng,
+                  title: f.Name + ' - ' + f.Region,
+                  draggable: true,
+                  map: map,
+                  icon: GetImageURL(f.BrandName)
+                });
+                communityMarkers.push(marker)
+              });
+              let filteredMarkers = [];
+              $.each(topValues, function (key, value) {
+                filteredMarkers.push(result.filter(a => a.Id == value.Id)[0])
+              });
+
+              const bounds = new google.maps.LatLngBounds();
+              bounds.extend(center)
+              filteredMarkers.forEach(m => {
+                bounds.extend(new google.maps.LatLng(m.Latitude, m.Longitude));
+                var tbody = "";
+                var i;
+
+                 // Loop to display the table below, listing all the communities within the radius
+                for (i = 0; i < filteredMarkers.length; i++) {
+                  let index = i + 1
+                  tbody += "<tr>"
+                  tbody += "<td class='td col" + filteredMarkers[i].Id + "'>" + index + "</td>";
+                  tbody += "<td class='td col" + filteredMarkers[i].Id + "'>" + filteredMarkers[i].BrandName + "</td>";
+                  tbody += "<td class='td col" + filteredMarkers[i].Id + "'>" + filteredMarkers[i].Name + "</td>";
+                  tbody += "<td class='td col" + filteredMarkers[i].Id + "'>" + filteredMarkers[i].Region + "</td>";
+                  tbody += "<td class='td col" + filteredMarkers[i].Id + "'>" + Math.round( topValues[i].distance) + "</td>";
+
+                  tbody += "<\tr>"
+                }
+
+                $('#bodyCal').html(tbody);
+              });
+              map.fitBounds(circle.getBounds());
+
+            });
+          });
+        }
+        else
+        alert("Communities Not Found")
+      });
+    }
+
+
+
+  </script>
+</body>
+
+</html>
+<!-- [END maps_map_simple] -->
